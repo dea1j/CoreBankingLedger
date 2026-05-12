@@ -1,4 +1,3 @@
-using System.Transactions;
 using CoreBankingLedger.Domain.Entities.Base;
 using CoreBankingLedger.Domain.Enums;
 
@@ -13,11 +12,11 @@ public class Transaction : BaseEntity
     public string? Description { get; private set; }
     public string? Metadata { get; private set; }
     public DateTime ProcessedAtUtc { get; private set; }
-    
+
     private readonly List<LedgerEntry> _ledgerEntries = new();
     public IReadOnlyCollection<LedgerEntry> LedgerEntries => _ledgerEntries.AsReadOnly();
 
-    private Transaction() {}
+    private Transaction() { }
 
     public static Transaction CreateDeposit(
         string reference,
@@ -60,11 +59,11 @@ public class Transaction : BaseEntity
             ProcessedAtUtc = DateTime.UtcNow
         };
     }
-    
+
     public static Transaction CreateTransfer(
-        string reference, 
-        decimal amount, 
-        Currency currency, 
+        string reference,
+        decimal amount,
+        Currency currency,
         string? description = null,
         string? metadata = null)
     {
@@ -82,12 +81,25 @@ public class Transaction : BaseEntity
         };
     }
 
-    public void AddLedgerEntry(Account account, decimal amount, decimal balanceAfter)
+    public void AddDebitEntry(Account account, decimal amount, decimal balanceAfter)
     {
+        if (amount <= 0)
+            throw new ArgumentException("Debit amount must be positive.", nameof(amount));
+
+        // The minus sign (-) is applied here before sending to the LedgerEntry factory
+        var entry = LedgerEntry.Create(this, account, -amount, balanceAfter);
+        _ledgerEntries.Add(entry);
+    }
+
+    public void AddCreditEntry(Account account, decimal amount, decimal balanceAfter)
+    {
+        if (amount <= 0)
+            throw new ArgumentException("Credit amount must be positive.", nameof(amount));
+
         var entry = LedgerEntry.Create(this, account, amount, balanceAfter);
         _ledgerEntries.Add(entry);
     }
-    
+
     private static void ValidateTransactionCreation(string reference, decimal amount)
     {
         if (string.IsNullOrWhiteSpace(reference))

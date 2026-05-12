@@ -16,12 +16,12 @@ public class Account : BaseEntity
     public IReadOnlyCollection<LedgerEntry> LedgerEntries => _ledgerEntries.AsReadOnly();
 
     private Account() { }
-    
+
     public static Account Create(Guid userId, string accountNumber, Currency currency)
     {
         if (userId == Guid.Empty)
             throw new ArgumentException("UserId cannot be empty.", nameof(userId));
-        
+
         if (string.IsNullOrWhiteSpace(accountNumber))
             throw new ArgumentException("Account number is required.", nameof(accountNumber));
 
@@ -34,8 +34,8 @@ public class Account : BaseEntity
             IsActive = true
         };
     }
-    
-    public void Credit(decimal amount, string reason)
+
+    public void Credit(decimal amount)
     {
         if (amount <= 0)
             throw new ArgumentException("Credit amount must be positive.", nameof(amount));
@@ -46,8 +46,8 @@ public class Account : BaseEntity
         CurrentBalance += amount;
         MarkAsModified();
     }
-    
-    public void Debit(decimal amount, string reason)
+
+    public void Debit(decimal amount)
     {
         if (amount <= 0)
             throw new ArgumentException("Debit amount must be positive.", nameof(amount));
@@ -61,12 +61,12 @@ public class Account : BaseEntity
         CurrentBalance -= amount;
         MarkAsModified();
     }
-    
+
     internal void AddLedgerEntry(LedgerEntry entry)
     {
         _ledgerEntries.Add(entry);
     }
-    
+
     public void Deactivate()
     {
         if (CurrentBalance != 0)
@@ -75,7 +75,7 @@ public class Account : BaseEntity
         IsActive = false;
         MarkAsModified();
     }
-    
+
     public void Activate()
     {
         IsActive = true;
